@@ -32,3 +32,27 @@ class Achievement {
       _$AchievementFromJson(json);
   Map<String, dynamic> toJson() => _$AchievementToJson(this);
 }
+
+/// Статус достижения
+enum AchievementStatus { unlocked, inProgress, locked }
+
+/// Прогресс по достижению
+class AchievementProgress {
+  final String achievementId;
+  final double percent; // 0.0 - 1.0
+  final AchievementStatus status;
+
+  AchievementProgress({
+    required this.achievementId,
+    required this.percent,
+    required this.status,
+  });
+}
+
+/// Событие, связанное с достижением
+class AchievementEvent {
+  final String type;
+  final Map<String, dynamic> payload;
+
+  AchievementEvent({required this.type, required this.payload});
+}

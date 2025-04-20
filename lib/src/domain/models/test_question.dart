@@ -1,30 +1,45 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'question_types/question_type.dart';
+import 'question_types/single_choice_question.dart';
+import 'question_types/multiple_choice_question.dart';
+import 'question_types/text_input_question.dart';
+import 'question_types/matching_question.dart';
+import 'question_types/true_false_question.dart';
 
 part 'test_question.g.dart';
 
 /// Модель вопроса теста
 @JsonSerializable()
-class TestQuestion {
+abstract class TestQuestion {
   /// Идентификатор вопроса
   final String id;
 
   /// Текст вопроса
   final String text;
 
-  /// Варианты ответов
-  final List<String> options;
+  /// Тип вопроса
+  final QuestionType type;
 
-  /// Индекс правильного ответа
-  final int correctOption;
+  TestQuestion({required this.id, required this.text, required this.type});
 
-  TestQuestion({
-    required this.id,
-    required this.text,
-    required this.options,
-    required this.correctOption,
-  });
+  factory TestQuestion.fromJson(Map<String, dynamic> json) {
+    final type = QuestionType.values.firstWhere(
+      (e) => e.toString() == 'QuestionType.' + (json['type'] as String),
+      orElse: () => QuestionType.singleChoice,
+    );
+    switch (type) {
+      case QuestionType.singleChoice:
+        return SingleChoiceQuestion.fromJson(json);
+      case QuestionType.multipleChoice:
+        return MultipleChoiceQuestion.fromJson(json);
+      case QuestionType.textInput:
+        return TextInputQuestion.fromJson(json);
+      case QuestionType.matching:
+        return MatchingQuestion.fromJson(json);
+      case QuestionType.trueFalse:
+        return TrueFalseQuestion.fromJson(json);
+    }
+  }
 
-  factory TestQuestion.fromJson(Map<String, dynamic> json) =>
-      _$TestQuestionFromJson(json);
-  Map<String, dynamic> toJson() => _$TestQuestionToJson(this);
+  Map<String, dynamic> toJson();
 }

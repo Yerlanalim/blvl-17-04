@@ -14,6 +14,11 @@ import '../features/auth/presentation/screens/auth_success_screen.dart';
 import '../main.dart';
 import 'models/route_params.dart';
 import '../application/providers/auth_providers.dart';
+import '../features/level_details/presentation/screens/level_details_screen.dart';
+import '../features/level_details/presentation/screens/video_player_screen.dart';
+import '../features/level_details/presentation/screens/test_screen.dart';
+import '../features/level_details/presentation/screens/artifact_details_screen.dart';
+import '../domain/models/level.dart';
 
 // Заглушки для защищённых маршрутов
 class ProfileScreen extends StatelessWidget {
@@ -115,6 +120,60 @@ GoRouter createAppRouter(Ref ref, RouterNotifier notifier) {
         pageBuilder:
             (context, state) =>
                 fadeTransitionPage(child: const AIAssistantScreen()),
+      ),
+      GoRoute(
+        path: '$levelPath/:id/details',
+        name: 'level-details',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id']!;
+          // TODO: получить userId из auth
+          final userId = 'mock_user';
+          // TODO: получить Level по id (например, через провайдер)
+          final level = Level(
+            id: id,
+            title: 'Level $id',
+            description: '',
+            order: 0,
+            isPremium: false,
+            contents: LevelContents(videoIds: [], testIds: [], artifactIds: []),
+          );
+          return fadeTransitionPage(
+            child: LevelDetailsScreen(level: level, userId: userId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '$levelPath/:levelId/video/:videoId',
+        name: 'video-player',
+        pageBuilder: (context, state) {
+          // TODO: получить userId из auth
+          final userId = 'mock_user';
+          final videoId = state.pathParameters['videoId']!;
+          // TODO: получить Video по id (через провайдер)
+          return fadeTransitionPage(child: VideoPlayerScreen());
+        },
+      ),
+      GoRoute(
+        path: '$levelPath/:levelId/test/:testId',
+        name: 'test',
+        pageBuilder: (context, state) {
+          // TODO: получить userId из auth
+          final userId = 'mock_user';
+          final testId = state.pathParameters['testId']!;
+          // TODO: получить Test по id (через провайдер)
+          return fadeTransitionPage(child: TestScreen());
+        },
+      ),
+      GoRoute(
+        path: '$levelPath/:levelId/artifact/:artifactId',
+        name: 'artifact-details',
+        pageBuilder: (context, state) {
+          // TODO: получить userId из auth
+          final userId = 'mock_user';
+          final artifactId = state.pathParameters['artifactId']!;
+          // TODO: получить Artifact по id (через провайдер)
+          return fadeTransitionPage(child: ArtifactDetailsScreen());
+        },
       ),
     ],
     errorBuilder:

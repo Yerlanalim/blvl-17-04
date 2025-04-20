@@ -9,14 +9,20 @@ part of 'test_question.dart';
 TestQuestion _$TestQuestionFromJson(Map<String, dynamic> json) => TestQuestion(
   id: json['id'] as String,
   text: json['text'] as String,
-  options: (json['options'] as List<dynamic>).map((e) => e as String).toList(),
-  correctOption: (json['correctOption'] as num).toInt(),
+  type: $enumDecode(_$QuestionTypeEnumMap, json['type']),
 );
 
 Map<String, dynamic> _$TestQuestionToJson(TestQuestion instance) =>
     <String, dynamic>{
       'id': instance.id,
       'text': instance.text,
-      'options': instance.options,
-      'correctOption': instance.correctOption,
+      'type': _$QuestionTypeEnumMap[instance.type]!,
     };
+
+const _$QuestionTypeEnumMap = {
+  QuestionType.singleChoice: 'singleChoice',
+  QuestionType.multipleChoice: 'multipleChoice',
+  QuestionType.textInput: 'textInput',
+  QuestionType.matching: 'matching',
+  QuestionType.trueFalse: 'trueFalse',
+};

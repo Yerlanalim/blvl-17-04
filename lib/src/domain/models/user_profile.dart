@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:blvl_17_04_tmp/src/domain/models/business_info.dart';
 
 part 'user_profile.g.dart';
 
@@ -12,7 +13,7 @@ class UserProfile {
   final String? photoUrl;
 
   /// Информация о бизнесе пользователя
-  final Map<String, dynamic>? businessInfo;
+  final BusinessInfo? businessInfo;
 
   /// Навыки пользователя (skillId -> value)
   final Map<String, int>? skills;
