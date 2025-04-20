@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // USERS: Только владелец может читать/писать свой профиль
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // PROGRESS: Только владелец может читать/писать свой прогресс
+    match /progress/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // LEVELS, VIDEOS, TESTS, ARTIFACTS: Только чтение, только для авторизованных
+    match /levels/{levelId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /videos/{videoId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /tests/{testId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /artifacts/{artifactId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // По умолчанию — запретить всё
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

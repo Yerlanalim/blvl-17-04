@@ -1,0 +1,226 @@
+## Stack & Versions
+- **Flutter:** 3.10+ (web-first with mobile support)
+- **Dart:** 3.0+
+- **State Management:** Riverpod 2.5.1, riverpod_annotation 2.3.5
+- **Navigation:** Go Router 14.2.1
+- **Backend:** Firebase (Auth 4.17.4, Firestore 4.15.4, Storage 11.6.5, Functions 4.6.5)
+- **HTTP Client:** http 1.2.2
+
+## Architecture
+### Clean Architecture (MANDATORY)
+```
+Domain → Application → Infrastructure → Presentation
+```
+- **Domain Layer**: Models, repository interfaces, service interfaces (Pure Dart, no dependencies)
+- **Application Layer**: Service implementations, state management, business logic
+- **Infrastructure Layer**: API implementations, database adapters, external services
+- **Presentation Layer**: UI components, controllers, screens
+
+### Feature-First Organization (MANDATORY)
+```
+lib/
+├── src/
+│   ├── core/                # Shared utilities, constants, widgets
+│   ├── domain/              # Shared domain models and interfaces
+│   ├── features/            # Feature modules
+│   │   ├── auth/            # Authentication feature
+│   │   │   ├── domain/      # Feature-specific domain
+│   │   │   ├── application/ # Feature-specific application logic
+│   │   │   ├── infrastructure/ # Feature implementation
+│   │   │   └── presentation/ # Feature UI components
+│   └── routing/             # App navigation
+└── main.dart
+```
+
+## Naming Conventions (MANDATORY)
+- **Files**: snake_case (e.g., `auth_repository.dart`)
+- **Classes**: PascalCase (e.g., `AuthRepository`)
+- **Variables/Methods**: camelCase (e.g., `getUserById`)
+- **Interfaces**: Prefix with 'I' (e.g., `IAuthRepository`)
+- **Constants**: SCREAMING_SNAKE_CASE for globals, camelCase for class-level
+- **Enums**: PascalCase for enum name, PascalCase for values
+
+## Riverpod Rules (MANDATORY)
+- **Use annotations**: Prefer `@riverpod` and code generation over manual providers
+- **Follow AsyncValue pattern**: Handle loading/error/data states consistently
+- **Keep providers atomic**: One provider = one piece of state
+- **Provider naming**:
+  ```dart
+  // DO:
+  @riverpod
+  UserRepository userRepository(UserRepositoryRef ref) { ... }
+  
+  // DON'T:
+  @riverpod
+  UserRepository getUserRepository(GetUserRepositoryRef ref) { ... }
+  ```
+
+## Firebase Guidelines
+- **Use transactions** for multi-document updates
+- **Implement caching** for frequently accessed data
+- **Limit query size** with pagination
+- **Structure subcollections** according to project schema:
+  ```
+  users/{userId}
+  progress/{userId}/summary
+  progress/{userId}/level_{levelId}
+  levels/{levelId}
+  ```
+- **Security rules must be tested** before deployment
+
+## Error Handling (MANDATORY)
+- Always use the central `ErrorHandler` class
+- Wrap Firebase operations in try-catch blocks
+- Use `AsyncValue` for propagating errors in UI
+- Log errors with appropriate detail
+- Present user-friendly error messages
+
+## Testing Requirements
+- **Unit tests** for all repository and service classes
+- **Widget tests** for all screen and complex widget components
+- **Mocks** for all external dependencies in tests
+- **Firebase Emulator** for testing Firestore/Auth operations
+
+## Style & UI Guidelines
+- Use predefined constants from `core/constants/`:
+  - Colors from `colors.dart`
+  - Text styles from theme
+  - Dimensions from `sizes.dart`
+- Make widgets `const` whenever possible
+- Use `RepaintBoundary` for complex UI elements
+- Follow adaptive design patterns for varying screen sizes
+
+## Optimizations
+- **DO** use pagination for large collections
+- **DO** cache frequently accessed data
+- **DO** implement lazy loading for images and content
+- **DO** optimize rebuilds with Riverpod selectors
+- **DO NOT** fetch entire collections without limits
+- **DO NOT** use unnecessary StatefulWidgets
+- **DO NOT** trigger multiple Firebase operations in build methods
+
+## Common Patterns
+
+### Repository Pattern
+```dart
+@injectable
+class FirestoreUserRepository implements IUserRepository {
+  final FirestoreDataService _dataService;
+  
+  FirestoreUserRepository(this._dataService);
+  
+  @override
+  Future<User?> getUserById(String id) async {
+    try {
+      final data = await _dataService.getDocument('users', id);
+      return data != null ? User.fromJson(data) : null;
+    } catch (e, stackTrace) {
+      ErrorHandler.instance.handleError(e, stackTrace);
+      rethrow;
+    }
+  }
+}
+```
+
+### Presentation Pattern (Screen)
+```dart
+class LevelMapScreen extends ConsumerWidget {
+  const LevelMapScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final levelsAsync = ref.watch(levelsProvider);
+    
+    return Scaffold(
+      appBar: AppBar(title: const Text('Level Map')),
+      body: AsyncValueWidget(
+        value: levelsAsync,
+        loading: () => const LoadingIndicator(),
+        error: (error, stack) => ErrorView(
+          message: error.toString(),
+          onRetry: () => ref.refresh(levelsProvider),
+        ),
+        data: (levels) => LevelMapView(levels: levels),
+      ),
+    );
+  }
+}
+```
+
+### AsyncValueWidget Pattern
+```dart
+class AsyncValueWidget<T> extends StatelessWidget {
+  final AsyncValue<T> value;
+  final Widget Function() loading;
+  final Widget Function(Object error, StackTrace? stackTrace) error;
+  final Widget Function(T data) data;
+
+  const AsyncValueWidget({
+    Key? key,
+    required this.value,
+    required this.loading,
+    required this.error,
+    required this.data,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return value.when(
+      loading: loading,
+      error: error,
+      data: data,
+    );
+  }
+}
+```
+
+## FORBIDDEN PRACTICES
+- **NEVER** use global state outside of Riverpod providers
+- **NEVER** make Firebase calls directly in UI components
+- **NEVER** catch errors without proper handling or logging
+- **NEVER** use `setState` with Riverpod
+- **NEVER** store sensitive data like Firebase API keys in code (use .env files)
+- **NEVER** return null for collections (return empty list instead)
+- **NEVER** use complex business logic in build methods
+- **NEVER** ignore Firebase security rules
+- **NEVER** perform heavy computations on the UI thread
+
+## BizLevel-Specific Rules
+### Level Map Implementation
+- Use virtualization for large level maps
+- Implement optimistic UI updates for level completion
+- Cache level connections for faster rendering
+
+### Authentication Flow
+- Follow exact authentication flow from tasks 2.1-2.5
+- Implement proper form validation for all inputs
+- Handle different auth providers consistently
+
+### Progress Tracking
+- Use atomic transactions for updating progress
+- Store progress in separate documents per level
+- Use denormalization for quick access to summary stats
+
+### Content System
+- Preload next content items for seamless experience
+- Implement proper video playback controls
+- Handle download state for artifacts appropriately
+
+## Cursor IDE Usage Tips
+- Break tasks into smaller chunks (max 100 lines of code per request)
+- Provide context about related files when asking for help
+- Use file paths to indicate where code should be placed
+- Specify dependencies and imports needed for generated code
+- Reference existing patterns when requesting similar functionality
+
+## Documentation Requirements
+- All public APIs must have documentation comments
+- Update README.md when adding new features
+- Update status.md after completing each task
+
+## Examples Repository
+Refer to these files for reference implementations:
+- `src/core/utils/error_handler.dart` - Error handling pattern
+- `src/features/auth/infrastructure/repositories/firebase_auth_repository.dart` - Repository pattern 
+- `src/features/level_map/application/services/level_map_manager.dart` - Service pattern
+- `src/features/auth/presentation/screens/login_screen.dart` - Screen pattern
